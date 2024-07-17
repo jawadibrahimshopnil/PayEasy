@@ -1,9 +1,15 @@
-import { useState } from "react";
+import {  useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
+import useAxiosPublic from "../hooks/useAxiosPublic";
+import useAuth from "../hooks/useAuth";
 
 const Register = () => {
+    const axiosPublic = useAxiosPublic();
     const [showPass, setShowPass] = useState(false);
+    const { setUser, setLoading } = useAuth();
+    const navigate = useNavigate();
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -18,10 +24,23 @@ const Register = () => {
             name,
             email,
             mobileNum,
-            password,
         }
-
         console.log(userData);
+
+        axiosPublic.post('/user/add', { ...userData, password })
+            .then(({ data }) => {
+                if (data.insertedId) {
+                    toast.success("User Added");
+                    axiosPublic.post('/jwt', userData)
+                        .then(({ data }) => {
+                            setUser(data.user);
+                            setLoading(false)
+                            console.log(data.user);
+                            navigate('/')
+                        })
+                }
+            });
+
     }
 
     return (
@@ -45,7 +64,7 @@ const Register = () => {
                     <div className="space-y-1 relative">
                         <label htmlFor="password" className="block">Password</label>
                         <input
-                            type={showPass ? "text" : "password"}
+                            type={showPass ? "number" : "password"}
                             name="password"
                             id="password"
                             placeholder="5-digit PIN"
@@ -53,7 +72,7 @@ const Register = () => {
                             required
                             pattern="[0-9]{5}" title="Please enter a 5-digit number (0-9)."
                         />
-                        
+
                         <span onClick={() => setShowPass(!showPass)} className="absolute right-2 top-[50%]">
                             {
                                 showPass ? <FaEyeSlash className="w-5 h-5" />
